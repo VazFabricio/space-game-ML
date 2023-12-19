@@ -1,49 +1,9 @@
 import pygame
 import random
+import math
+from Plataform import Platform
+from Ship import Ship
 
-class Platform:
-    def __init__(self, x, y, speed):
-        self.rect = pygame.Rect(x, y, 30, 80)
-        self.speed = speed
-
-    def move(self):
-        self.rect.y += self.speed
-
-    def draw(self, display, texture):
-        # Desenha a hitbox (retângulo)
-        #pygame.draw.rect(display, (255, 0, 0), self.rect, 2)  # 2 é a largura da linha
-        display.blit(texture, self.rect)
-
-    def check_collision(self, ship_rect):
-        return self.rect.colliderect(ship_rect)
-
-class Ship:
-    def __init__(self, x, y, width, height):
-        self.x = x
-        self.y = y
-        self.width = width
-        self.height = height
-
-    def move_left(self):
-        if self.x > 0:
-            self.x -= 5
-
-    def move_right(self, display_width):
-        if self.x < display_width - self.width:
-            self.x += 5
-
-    def move_up(self):
-        if self.y > 0:
-            self.y -= 5
-
-    def move_down(self, display_height):
-        if self.y < display_height - self.height:
-            self.y += 5
-
-    def draw(self, display, texture):
-        ship_rect = pygame.Rect(self.x, self.y, self.width, self.height)
-        #pygame.draw.rect(display, (0, 255, 0), ship_rect, 2)  # 2 é a largura da linha
-        display.blit(texture, (self.x, self.y))
 
 def initialize_game():
     pygame.init()
@@ -54,6 +14,7 @@ def initialize_game():
     clock = pygame.time.Clock()
 
     return display_width, display_height, game_display, clock
+
 
 def load_images():
     texture_ship = pygame.image.load("spaceship.png").convert_alpha()
@@ -66,6 +27,7 @@ def load_images():
     texture_background = pygame.transform.scale(texture_background, (800, 600))
 
     return texture_ship, texture_platform, texture_background
+
 
 def handle_events():
     global MOVING_LEFT, MOVING_RIGHT, MOVING_UP, MOVING_DOWN
@@ -94,21 +56,33 @@ def handle_events():
 
     return True
 
+
+def draw_collision_line(game_display, ship, platform):
+    expanded_ship_rect = pygame.Rect(ship.x - 20, ship.y - 20, ship.width + 40, ship.height + 40)
+    ship_center = (
+        expanded_ship_rect.x + expanded_ship_rect.width // 2, expanded_ship_rect.y + expanded_ship_rect.height // 2)
+
+    platform_center = (platform.rect.x + platform.rect.width // 2, platform.rect.y + platform.rect.height // 2)
+
+    pygame.draw.line(game_display, (255, 0, 0), ship_center, platform_center, 2)
+
+
 def main():
     global MOVING_LEFT, MOVING_RIGHT, MOVING_UP, MOVING_DOWN
 
     display_width, display_height, game_display, clock = initialize_game()
     texture_ship, texture_platform, texture_background = load_images()
 
-    ship = Ship(0, 0, 50, 50)
+    ship = Ship(400, 300, 50, 50, 10, 10)
     NUMBER_OF_COLLISIONS = 0
-    SPEED = 1
+    SPEED = 0
     platforms = []
+
+    distances_to_platforms = []
 
     running = True
     while running:
         running = handle_events()
-
         if MOVING_LEFT:
             ship.move_left()
         if MOVING_RIGHT:
@@ -121,12 +95,13 @@ def main():
         game_display.blit(texture_background, (0, 0))
 
         for platform in platforms:
+
             platform.move()
             platform.draw(game_display, texture_platform)
 
             if platform.check_collision(pygame.Rect(ship.x, ship.y, ship.width, ship.height)):
                 NUMBER_OF_COLLISIONS += 1
-                SPEED += 1
+                SPEED += 0
                 platform.speed = SPEED * 1.5
                 platforms.remove(platform)
                 break
@@ -134,8 +109,21 @@ def main():
             if platform.rect.y > display_height:
                 platforms.remove(platform)
 
+            expanded_ship_rect = pygame.Rect(ship.x - 100, ship.y - 100, ship.width + 200, ship.height + 100)
+            #if platform.check_collision(expanded_ship_rect):
+
+
+            distance = ship.calcular_distancia_visao(platform.rect)
+
+            # Verifica se a distância atende ao critério desejado (por exemplo, distância < 50)
+            if distance < 200:
+                print(f"Distância para plataforma: {distance}")
+
+            # Chama a função para desenhar a linha de colisão expandida
+            draw_collision_line(game_display, ship, platform)
+
         while len(platforms) < 5:
-            new_platform = Platform(random.randrange(100, 700), -20, SPEED)
+            new_platform = Platform(random.randrange(0, 800), -20, SPEED)
             platforms.append(new_platform)
 
         ship.draw(game_display, texture_ship)
@@ -149,6 +137,7 @@ def main():
 
     pygame.quit()
     quit()
+
 
 if __name__ == "__main__":
     MOVING_LEFT = MOVING_RIGHT = MOVING_UP = MOVING_DOWN = False
