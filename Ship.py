@@ -1,5 +1,4 @@
 import math
-
 import pygame
 
 
@@ -41,3 +40,13 @@ class Ship:
 
         distance = math.sqrt((ship_center[0] - platform_center[0]) ** 2 + (ship_center[1] - platform_center[1]) ** 2)
         return distance
+
+    def calcular_distancia_borda(self, display_width, display_height):
+        # Calcula a distância da nave até as bordas da tela
+        distancia_esquerda = self.x
+        distancia_direita = display_width - (self.x + self.width)
+        distancia_topo = self.y
+        distancia_base = display_height - (self.y + self.height)
+
+        # Retorna um vetor representando a distância até as bordas (esquerda, direita, topo, base)
+        return [distancia_esquerda, distancia_direita, distancia_topo, distancia_base]
